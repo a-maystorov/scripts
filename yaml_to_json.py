@@ -17,6 +17,10 @@ def convert_yaml_to_json(directory):
     if not os.path.exists(directory):
         raise ValueError(f"Directory '{directory}' does not exist")
 
+    # Check if the provided path is a directory
+    if not os.path.isdir(directory):
+        raise ValueError("Expected a directory path")
+
     # Get all .yaml files in the directory
     yaml_files = Path(directory).glob("*.yaml")
 
@@ -141,11 +145,32 @@ class TestYAMLToJSONConverter(unittest.TestCase):
         )
         self.assertEqual(json_data["environment"], "production")
 
+    def test_file_instead_of_directory(self):
+        """Test that an error is raised when a file path is provided instead of a directory"""
+        # Create a test YAML file
+        yaml_path = Path(self.test_dir) / "test.yaml"
+        yaml_content = """
+        key: value
+        """
+        with open(yaml_path, "w") as f:
+            f.write(yaml_content)
+
+        # Try to convert using the file path instead of directory
+        with self.assertRaises(ValueError) as context:
+            convert_yaml_to_json(str(yaml_path))
+
+        self.assertTrue("Expected a directory path" in str(context.exception))
+
 
 if __name__ == "__main__":
     import sys
 
     if len(sys.argv) > 1:
+        path = Path(sys.argv[1])
+        if not path.is_dir():
+            print("Error: Please provide a directory path, not a file path")
+            print("Usage: python yaml_to_json.py <directory_path>")
+            sys.exit(1)
         convert_yaml_to_json(sys.argv[1])
     else:
         unittest.main()
